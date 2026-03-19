@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>استهدافات العراق | شبكة الساعة الإعلامية</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --bg:#09090e;--sur:#0f1016;--card:#13151d;--bdr:#1c1f2c;--bdr2:#252840;
+  --tx:#ccd1e8;--tx2:#8f96b4;--mt:#4a5068;--faint:#0c0d14;
+  --us:#3a7bd5;--il:#c4922a;--ir:#c23b3b;
+  --grn:#2dbc78;--amb:#df8f2e;
+  --font:"IBM Plex Sans Arabic",sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+
+/* TOPBAR */
+#top{flex-shrink:0;height:50px;display:flex;align-items:center;gap:10px;
+  padding:0 14px;background:var(--sur);border-bottom:1px solid var(--bdr);z-index:900}
+#logo{height:32px;width:32px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.pipe{width:1px;height:18px;background:var(--bdr);flex-shrink:0}
+#hd{flex:1;min-width:0}
+#hd b{display:block;font-size:.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hd small{font-size:.63rem;color:var(--mt)}
+.pill{display:inline-flex;align-items:center;gap:5px;background:var(--faint);
+  border:1px solid var(--bdr);border-radius:20px;padding:4px 11px;
+  font-size:.67rem;color:var(--mt);flex-shrink:0}
+.sd{width:6px;height:6px;border-radius:50%;background:var(--grn);flex-shrink:0}
+.sd.L{background:var(--amb);animation:bk .9s infinite}
+.sd.E{background:var(--ir)}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* NAV */
+#nav{flex-shrink:0;display:flex;background:var(--sur);border-bottom:1px solid var(--bdr);
+  overflow-x:auto;scrollbar-width:none;padding:0 6px}
+#nav::-webkit-scrollbar{display:none}
+.ntab{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:0 16px;height:40px;
+  font-size:.76rem;font-weight:500;color:var(--mt);cursor:pointer;border:none;
+  background:transparent;font-family:var(--font);border-bottom:2px solid transparent;
+  transition:.15s;white-space:nowrap}
+.ntab:hover{color:var(--tx)}
+.ntab.on{color:var(--tx);border-bottom-color:var(--c,var(--grn))}
+.ndot{width:7px;height:7px;border-radius:50%;background:var(--c,#888);flex-shrink:0}
+.nbadge{background:var(--bdr);border-radius:10px;padding:1px 7px;font-size:.61rem;color:var(--tx2);font-weight:600}
+
+/* VIEWS */
+#views{flex:1;overflow:hidden;position:relative}
+.view{display:none;height:100%}
+.view.on{display:flex}
+
+/* ─── VIEW: STRIKES (timeline) ─── */
+#vS{flex-direction:column}
+/* ─── VIEW: FACTIONS (map+side) ─── */
+#vF{flex-direction:row;position:relative}
+/* ─── VIEW: EVENTS (timeline) ─── */
+#vE{flex-direction:column}
+/* ─── VIEW: SECURITY ─── */
+#vSec{flex-direction:column}
+
+/* SHARED TOOLBAR */
+.vtb{flex-shrink:0;padding:10px 14px;background:var(--sur);
+  border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vcnt{font-size:.74rem;font-weight:700;color:var(--tx2);margin-right:auto}
+.vbody{flex:1;overflow-y:auto;padding:16px}
+.vcenter{max-width:860px;margin:0 auto}
+
+/* FILTER INPUTS */
+.fi-sm{background:var(--faint);border:1px solid var(--bdr);border-radius:7px;
+  color:var(--tx);font-size:.74rem;padding:6px 10px;outline:none;
+  font-family:var(--font);height:34px;transition:border-color .15s}
+.fi-sm:focus{border-color:var(--grn)}
+select.fi-sm option{background:var(--card)}
+.fi{background:var(--faint);border:1px solid var(--bdr);border-radius:7px;
+  color:var(--tx);font-size:.75rem;padding:7px 10px;outline:none;width:100%;
+  font-family:var(--font);transition:border-color .15s;margin-bottom:5px}
+.fi:focus{border-color:var(--grn)}
+.fi:last-child{margin-bottom:0}
+select.fi option{background:var(--card)}
+
+/* TAGS */
+.tag{font-size:.63rem;font-weight:600;padding:3px 8px;border-radius:4px}
+.t-us{background:#3a7bd518;color:var(--us);border:1px solid #3a7bd530}
+.t-il{background:#c4922a18;color:var(--il);border:1px solid #c4922a30}
+.t-ir{background:#c23b3b18;color:var(--ir);border:1px solid #c23b3b30}
+.t-grn{background:#2dbc7818;color:var(--grn);border:1px solid #2dbc7830}
+.t-amb{background:#df8f2e18;color:var(--amb);border:1px solid #df8f2e30}
+.t-neu{background:var(--bdr);color:var(--tx2)}
+.lt{font-size:.59rem;font-weight:600;padding:2px 5px;border-radius:3px}
+
+/* ─── TIMELINE SHARED ─── */
+.tl-wrap{position:relative;padding-right:28px}
+.tl-wrap::before{content:'';position:absolute;right:9px;top:0;bottom:0;
+  width:1.5px;background:var(--bdr2)}
+.tl-grp{margin-bottom:22px}
+.tl-dt{font-size:.7rem;font-weight:700;color:var(--mt);margin-bottom:12px;
+  display:flex;align-items:center;gap:10px}
+.tl-dt::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+/* STRIKE CARD */
+.sk{position:relative;background:var(--card);border:1px solid var(--bdr);
+  border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+.sk:hover{border-color:var(--bdr2)}
+.sk::before{content:'';position:absolute;right:-28px;top:18px;width:11px;height:11px;
+  border-radius:50%;border:2px solid var(--c,#6674a0);background:var(--bg);z-index:1}
+.sk::after{content:'';position:absolute;right:-20px;top:24px;width:20px;height:1.5px;background:var(--bdr2)}
+.sk-top{height:3px;background:var(--c,#6674a0)}
+.sk-head{padding:10px 14px 8px;border-bottom:1px solid var(--bdr)}
+.sk-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:.65rem;color:var(--mt);margin-bottom:5px}
+.sk-title{font-size:.82rem;font-weight:700;line-height:1.5;color:var(--tx)}
+.sk-foot{padding:8px 14px;border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.sk-tags{display:flex;gap:5px;flex-wrap:wrap}
+.src{font-size:.63rem;color:var(--grn);text-decoration:none}
+.src:hover{text-decoration:underline}
+
+/* EVENT CARD */
+.ev{position:relative;background:var(--card);border:1px solid var(--bdr);
+  border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+.ev:hover{border-color:var(--bdr2)}
+.ev::before{content:'';position:absolute;right:-28px;top:18px;width:11px;height:11px;
+  border-radius:50%;border:2px solid var(--grn);background:var(--bg);z-index:1}
+.ev::after{content:'';position:absolute;right:-20px;top:24px;width:20px;height:1.5px;background:var(--bdr2)}
+.ev-top{height:3px;background:var(--grn)}
+.ev-head{padding:10px 14px 8px;border-bottom:1px solid var(--bdr)}
+.ev-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.64rem;color:var(--mt);margin-bottom:5px}
+.ev-name{font-size:.82rem;font-weight:700;color:var(--tx);line-height:1.4}
+.ev-body{padding:10px 14px;font-size:.77rem;line-height:1.78;color:var(--tx);white-space:pre-line}
+.ev-foot{padding:8px 14px;border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between}
+.ev-prov{font-size:.63rem;color:var(--mt)}
+
+/* SECURITY CARDS */
+.sec-feat{background:var(--card);border:1px solid var(--bdr2);border-radius:13px;
+  overflow:hidden;border-right:3px solid var(--amb);margin-bottom:12px}
+.sec-feat-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;
+  background:#df8f2e18;border-bottom:1px solid var(--bdr)}
+.sec-feat-lbl{font-size:.68rem;font-weight:700;color:var(--amb)}
+.sec-new{background:var(--amb);color:#000;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:10px}
+.sec-feat-date{font-size:.65rem;color:var(--mt);margin-right:auto}
+.sec-feat-body{padding:14px 16px;font-size:.8rem;line-height:1.82;color:var(--tx);white-space:pre-line}
+.sec-feat-foot{padding:9px 14px;border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:flex-end}
+.sec-card{background:var(--card);border:1px solid var(--bdr);border-radius:11px;
+  overflow:hidden;margin-bottom:8px;border-right:3px solid var(--bdr2)}
+.sec-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer}
+.sec-date{font-size:.65rem;color:var(--mt);flex-shrink:0;min-width:85px}
+.sec-prev{flex:1;font-size:.74rem;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec-arr{font-size:.7rem;color:var(--mt);flex-shrink:0;transition:transform .2s;padding:0 4px}
+.sec-arr.open{transform:rotate(180deg)}
+.sec-full{display:none;padding:10px 14px 12px;border-top:1px solid var(--bdr);
+  font-size:.77rem;line-height:1.8;color:var(--tx);white-space:pre-line}
+.sec-full.on{display:block}
+.sec-foot{padding:7px 14px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end}
+
+/* MAP SHARED */
+.leaflet-container{font-family:var(--font)!important;background:#08090d!important}
+.leaflet-tile{filter:brightness(.52) saturate(.25) hue-rotate(215deg)}
+.leaflet-control-zoom a{background:var(--card)!important;border:1px solid var(--bdr)!important;
+  color:var(--tx2)!important;width:28px!important;height:28px!important;line-height:26px!important}
+.leaflet-bar{border:none!important;box-shadow:none!important}
+.leaflet-control-attribution{background:#00000077!important;color:var(--mt)!important;font-size:.54rem!important}
+.leaflet-popup-content-wrapper{background:var(--card)!important;border:1px solid var(--bdr2)!important;
+  border-radius:14px!important;box-shadow:0 14px 44px #00000099!important;
+  color:var(--tx)!important;font-family:var(--font)!important;padding:0!important;min-width:230px}
+.leaflet-popup-tip{background:var(--card)!important}
+.leaflet-popup-content{margin:0!important;padding:0!important;font-family:var(--font)!important}
+.leaflet-popup-close-button{color:var(--mt)!important;top:9px!important;left:9px!important;right:auto!important}
+
+/* FAC MAP */
+#fac-map-wrap{flex:1;position:relative;display:flex;flex-direction:column;background:#08090d}
+#fac-map{flex:1;min-height:0}
+.mstats{position:absolute;bottom:0;left:0;right:0;z-index:500;
+  padding:20px 12px 7px;
+  background:linear-gradient(transparent,rgba(9,9,14,.8) 35%,rgba(9,9,14,.97));
+  display:flex;gap:7px;justify-content:center;flex-wrap:wrap;pointer-events:none}
+.schip{display:inline-flex;align-items:center;gap:5px;background:var(--card);
+  border:1px solid var(--bdr);border-radius:20px;padding:5px 12px;
+  font-size:.7rem;color:var(--tx2);pointer-events:auto}
+.schip-n{font-weight:700;font-size:.8rem}
+
+/* FAC SIDEBAR */
+#fac-side{width:280px;flex-shrink:0;background:var(--sur);
+  border-left:1px solid var(--bdr);display:flex;flex-direction:column}
+.fac-hd{padding:11px 12px 9px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.fac-hd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fac-title{font-size:.74rem;font-weight:700;color:var(--tx2)}
+.back-btn{display:none;background:var(--faint);border:1px solid var(--bdr);
+  border-radius:6px;color:var(--tx2);cursor:pointer;font-size:.7rem;
+  padding:4px 9px;font-family:var(--font)}
+.fac-list{flex:1;overflow-y:auto;padding:7px}
+
+/* FAC LIST ITEM */
+.fli{display:flex;align-items:flex-start;gap:8px;padding:9px 8px;border-radius:9px;
+  cursor:pointer;border:1px solid transparent;margin-bottom:3px;transition:.12s}
+.fli:hover{background:var(--card)}
+.fli.active{background:var(--card);border-color:var(--bdr2)}
+.fli-bar{width:3px;border-radius:2px;align-self:stretch;flex-shrink:0;min-height:34px}
+.fli-b{flex:1;min-width:0}
+.fli-n{font-size:.73rem;font-weight:600;color:var(--tx2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fli-s{font-size:.65rem;color:var(--mt);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fli-d{font-size:.61rem;color:var(--mt);margin-top:1px}
+.fli-ts{display:flex;gap:3px;margin-top:4px;flex-wrap:wrap}
+
+/* FAC DETAIL BOX */
+.fac-detail{background:var(--card);border:1px solid var(--bdr2);
+  border-radius:10px;padding:12px;margin-bottom:10px}
+
+/* MOBILE */
+#fac-tog{display:none;position:absolute;top:9px;right:9px;z-index:700;
+  width:34px;height:34px;border-radius:8px;background:var(--card);
+  border:1px solid var(--bdr);cursor:pointer;color:var(--tx2);font-size:.9rem;
+  align-items:center;justify-content:center}
+
+/* MAP POPUP */
+.pop{padding:13px;direction:rtl;font-family:var(--font)}
+.pop-hd{display:flex;align-items:center;gap:9px;margin-bottom:9px;
+  padding-bottom:9px;border-bottom:1px solid var(--bdr)}
+.pop-name{font-size:.83rem;font-weight:700}
+.pop-brig{font-size:.66rem;color:var(--mt)}
+.pop-row{display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:4px}
+.pop-lbl{color:var(--mt)}
+.pop-val{color:var(--tx2);font-weight:500;max-width:55%;text-align:left}
+.pop-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+
+/* EMPTY/LOADER */
+.empty{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;height:200px;gap:10px;color:var(--mt);font-size:.8rem}
+.loader{width:24px;height:24px;border-radius:50%;border:2.5px solid var(--bdr2);
+  border-top-color:var(--grn);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* DATE GROUP IN FAC LIST */
+.fac-date-sep{padding:5px 8px 2px;font-size:.63rem;font-weight:700;
+  color:var(--mt);border-bottom:1px solid var(--bdr);margin-bottom:2px}
+
+@media(max-width:700px){
+  #fac-side{position:absolute;top:0;right:0;bottom:0;
+    width:265px;transform:translateX(100%);z-index:600}
+  #fac-side.open{transform:translateX(0)}
+  #fac-tog{display:flex}
+  #hd small{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header id="top">
+  <img id="logo" src="https://yt3.googleusercontent.com/5EHxqB4sT-zygGqb_yeLGSFFF9WFJ0vPo4s0eYaHAJAG4TCD-djfcYNlAq5W0lKr40QTUdzp7Xk=s900-c-k-c0x00ffffff-no-rj" alt="" onerror="this.style.display='none'">
+  <div class="pipe"></div>
+  <div id="hd">
+    <b>استهدافات العراق — التوترات الإيرانية الأمريكية</b>
+    <small>قسم صحافة البيانات · شبكة الساعة الإعلامية</small>
+  </div>
+  <div class="pill"><div class="sd L" id="sd"></div><span id="st">تحميل...</span></div>
+</header>
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="ntab on" data-v="F" style="--c:#c23b3b" onclick="goto('F',this)">
+    <div class="ndot"></div> استهدافات الفصائل <span class="nbadge" id="c-f">—</span>
+  </button>
+  <button class="ntab" data-v="S" style="--c:#3a7bd5" onclick="goto('S',this)">
+    <div class="ndot"></div> ضربات داخل العراق <span class="nbadge" id="c-s">—</span>
+  </button>
+  <button class="ntab" data-v="E" style="--c:#2dbc78" onclick="goto('E',this)">
+    <div class="ndot"></div> أبرز الأحداث <span class="nbadge" id="c-e">—</span>
+  </button>
+  <button class="ntab" data-v="Sec" style="--c:#df8f2e" onclick="goto('Sec',this)">
+    <div class="ndot"></div> خلية الإعلام الأمني <span class="nbadge" id="c-sec">—</span>
+  </button>
+</nav>
+
+<!-- VIEWS -->
+<div id="views">
+
+<!-- VIEW F: استهدافات الفصائل -->
+<div class="view on" id="vF">
+  <div id="fac-map-wrap">
+    <div id="fac-map"></div>
+    <div class="mstats">
+      <div class="schip"><span class="schip-n" id="nf-t" style="color:var(--ir)">—</span> ضربة</div>
+      <div class="schip"><span class="schip-n" id="nf-k" style="color:var(--ir)">—</span> قتيل</div>
+      <div class="schip"><span class="schip-n" id="nf-w" style="color:var(--amb)">—</span> جريح</div>
+    </div>
+    <button id="fac-tog" onclick="document.getElementById('fac-side').classList.toggle('open')">☰</button>
+  </div>
+  <div id="fac-side">
+    <div class="fac-hd">
+      <div class="fac-hd-top">
+        <span class="fac-title" id="fac-title">كل الاستهدافات</span>
+        <button class="back-btn" id="back-btn" onclick="showAll()">← الكل</button>
+      </div>
+      <input class="fi" type="text" id="q-fac" placeholder="بحث عن فصيل أو موقع..." oninput="filterFac()">
+    </div>
+    <div class="fac-list" id="fac-list"></div>
+  </div>
+</div>
+
+<!-- VIEW S: ضربات داخل العراق -->
+<div class="view" id="vS">
+  <div class="vtb">
+    <input class="fi-sm" style="width:180px" type="text" id="q-s" placeholder="بحث..." oninput="renderS()">
+    <select class="fi-sm" style="width:140px" id="fp-s" onchange="renderS()"><option value="">كل المحافظات</option></select>
+    <select class="fi-sm" style="width:145px" id="fa-s" onchange="renderS()"><option value="">كل الفاعلين</option></select>
+    <span class="vcnt" id="cnt-s"></span>
+  </div>
+  <div class="vbody"><div class="vcenter"><div id="s-body"><div class="empty"><div class="loader"></div></div></div></div></div>
+</div>
+
+<!-- VIEW E: أبرز الأحداث -->
+<div class="view" id="vE">
+  <div class="vtb">
+    <input class="fi-sm" style="width:180px" type="text" id="q-e" placeholder="بحث في الأحداث..." oninput="renderE()">
+    <select class="fi-sm" style="width:140px" id="fp-e" onchange="renderE()"><option value="">كل المحافظات</option></select>
+    <span class="vcnt" id="cnt-e"></span>
+  </div>
+  <div class="vbody"><div class="vcenter"><div id="e-body"><div class="empty"><div class="loader"></div></div></div></div></div>
+</div>
+
+<!-- VIEW Sec: خلية الإعلام الأمني -->
+<div class="view" id="vSec">
+  <div class="vtb">
+    <input class="fi-sm" style="width:200px" type="text" id="q-sec" placeholder="بحث في البيانات..." oninput="renderSec()">
+    <span class="vcnt" id="cnt-sec-n"></span>
+  </div>
+  <div class="vbody"><div class="vcenter"><div id="sec-body"><div class="empty"><div class="loader"></div></div></div></div></div>
+</div>
+
+</div><!-- /views -->
+
+<script>
+/* ══ CONFIG ══ */
+const SH={
+  strikes:  "https://docs.google.com/spreadsheets/d/e/2PACX-1vTI6cNqf1IPfuK9EYtdyI_oKx-rANqmNmHEfzxlmOlfN5ziXUJsx3e-y4y_s2R8QzQ-loGTDSP_Atob/pub?gid=750051758&single=true&output=csv",
+  factions: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTI6cNqf1IPfuK9EYtdyI_oKx-rANqmNmHEfzxlmOlfN5ziXUJsx3e-y4y_s2R8QzQ-loGTDSP_Atob/pub?gid=1827101724&single=true&output=csv",
+  events:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTI6cNqf1IPfuK9EYtdyI_oKx-rANqmNmHEfzxlmOlfN5ziXUJsx3e-y4y_s2R8QzQ-loGTDSP_Atob/pub?gid=1152180943&single=true&output=csv",
+  security: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTI6cNqf1IPfuK9EYtdyI_oKx-rANqmNmHEfzxlmOlfN5ziXUJsx3e-y4y_s2R8QzQ-loGTDSP_Atob/pub?gid=520015546&single=true&output=csv",
+};
+
+/* ══ STATE ══ */
+const D={strikes:[],factions:[],events:[],security:[]};
+let MAP=null, MK=[], _SR={}; // _SR = strike registry for marker clicks
+
+/* ══ CSV ══ */
+function clean(v){
+  v=(v||"").trim();
+  v=v.replace(/^_+(https?:\/\/[^\s_]+)_+$/,"$1");
+  v=v.replace(/^[\u2B50\u26AA\u2B55\uFE0F_\s]+/,"");
+  return v.trim();
+}
+function parseCSV(txt){
+  txt=txt.replace(/\r\n/g,"\n").replace(/\r/g,"\n").trim();
+  if(!txt) return [];
+  const toks=[];
+  let cur="",inQ=false,row=[];
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(c==='"'){if(inQ&&txt[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(c===','&&!inQ){row.push(clean(cur));cur="";}
+    else if(c==='\n'&&!inQ){row.push(clean(cur));cur="";if(row.some(v=>v))toks.push(row);row=[];}
+    else cur+=c;
+  }
+  row.push(clean(cur));
+  if(row.some(v=>v))toks.push(row);
+  if(toks.length<2) return [];
+  /* find header row = first row with >1 non-empty cells */
+  let hi=0;
+  for(let i=0;i<Math.min(toks.length,5);i++){if(toks[i].filter(v=>v).length>1){hi=i;break;}}
+  const hdr=toks[hi].map(h=>h.trim());
+  const last=hdr.length-1;
+  return toks.slice(hi+1).filter(r=>r.some(v=>v)).map(vals=>{
+    const o={};
+    hdr.forEach((h,i)=>{
+      o[h]=(i<last)?vals[i]||"":vals.slice(i).filter(Boolean).join(" ")||"";
+    });
+    return o;
+  });
+}
+
+/* ══ LOAD ══ */
+async function loadAll(){
+  setSt("L","تحميل...");
+  await Promise.all(Object.entries(SH).map(async([k,url])=>{
+    try{const r=await fetch(url+"&_="+Date.now());D[k]=parseCSV(await r.text());}
+    catch(e){D[k]=[];}
+  }));
+  document.getElementById("c-f").textContent  =D.factions.length||0;
+  document.getElementById("c-s").textContent  =D.strikes.length||0;
+  document.getElementById("c-e").textContent  =D.events.length||0;
+  document.getElementById("c-sec").textContent=D.security.length||0;
+  renderF(); renderS(); renderE(); renderSec();
+  const t=new Date().toLocaleTimeString("ar-IQ",{hour:"2-digit",minute:"2-digit"});
+  setSt("","آخر تحديث "+t);
+}
+
+/* ══ NAV ══ */
+function goto(v,btn){
+  document.querySelectorAll(".ntab").forEach(b=>b.classList.remove("on"));
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("on"));
+  btn.classList.add("on");
+  document.getElementById("v"+v).classList.add("on");
+  if(v==="F"){
+    if(!MAP) initMap();
+    else setTimeout(()=>MAP.invalidateSize(),60);
+  }
+}
+
+/* ══════════════════════
+   VIEW F — FACTIONS
+══════════════════════ */
+function initMap(){
+  if(MAP) return;
+  MAP=L.map("fac-map",{center:[33.5,43.8],zoom:6});
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {maxZoom:19,attribution:"© OpenStreetMap"}).addTo(MAP);
+  renderF();
+}
+
+function renderF(){
+  const rows=[...D.factions].sort((a,b)=>sortKey(b.date,b.time||"")-sortKey(a.date,a.time||""));
+  updateFacStats(rows);
+  buildFacList(rows);
+  if(MAP) drawMarkers(rows);
+}
+
+function filterFac(){
+  const q=(document.getElementById("q-fac").value||"").toLowerCase();
+  const rows=(q?D.factions.filter(r=>Object.values(r).join(" ").toLowerCase().includes(q)):D.factions)
+    .sort((a,b)=>sortKey(b.date,b.time||"")-sortKey(a.date,a.time||""));
+  updateFacStats(rows);
+  buildFacList(rows);
+  if(MAP) drawMarkers(rows);
+}
+
+function updateFacStats(rows){
+  const k=rows.reduce((s,r)=>s+(+r.killed||0),0);
+  const w=rows.reduce((s,r)=>s+(+r.wounded||0),0);
+  document.getElementById("nf-t").textContent=rows.length;
+  document.getElementById("nf-k").textContent=k;
+  document.getElementById("nf-w").textContent=w;
+}
+
+function buildFacList(rows){
+  _SR={};
+  const groups={};
+  rows.forEach(r=>{const d=r.date||"غير محدد";(groups[d]=groups[d]||[]).push(r);});
+  let html="";
+  Object.entries(groups).forEach(([date,items])=>{
+    html+=`<div class="fac-date-sep">${date}</div>`;
+    items.forEach((r,i)=>{
+      const c=r.color||"#c23b3b";
+      const logo=r.logo_url||"";
+      const lid="fl"+(+r.lat||0).toFixed(3).replace(".","")+"_"+(+r.lng||0).toFixed(3).replace(".","");
+      _SR[lid]=r;
+      const k=+r.killed||0,w=+r.wounded||0;
+      const av=logo
+        ?`<img style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1.5px solid ${c};flex-shrink:0" src="${logo}" onerror="this.style.display='none'">`
+        :`<div style="width:34px;height:34px;border-radius:50%;background:${c}22;border:1.5px solid ${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;color:${c};font-size:.75rem;font-weight:700">${(r.faction_name||"؟").charAt(0)}</div>`;
+      html+=`<div class="fli" id="${lid}" onclick="clickStrike('${lid}')">
+        <div class="fli-bar" style="background:${c}"></div>
+        ${av}
+        <div class="fli-b">
+          <div class="fli-n">${r.faction_name||"—"}</div>
+          <div class="fli-s">${r.location||"—"}${r.province?" · "+r.province:""}</div>
+          <div class="fli-ts">
+            ${r.type?`<span class="lt t-neu">${r.type}</span>`:""}
+            ${k>0?`<span class="lt t-ir">${k} قتيل</span>`:""}
+            ${w>0?`<span class="lt t-amb">${w} جريح</span>`:""}
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById("fac-list").innerHTML=html||`<div style="padding:28px;text-align:center;color:var(--mt);font-size:.74rem">لا نتائج</div>`;
+}
+
+function clickStrike(lid){
+  const r=_SR[lid];
+  if(!r) return;
+  /* highlight in list */
+  document.querySelectorAll(".fli").forEach(e=>e.classList.remove("active"));
+  document.getElementById(lid)?.classList.add("active");
+  /* fly to location and open popup */
+  const lat=+r.lat||0,lng=+r.lng||0;
+  if(lat&&lng&&MAP){
+    MAP.flyTo([lat,lng],12,{duration:.6});
+    /* open the matching marker popup after fly */
+    setTimeout(()=>{
+      MK.forEach(m=>{
+        const ll=m.getLatLng();
+        if(Math.abs(ll.lat-lat)<0.001&&Math.abs(ll.lng-lng)<0.001) m.openPopup();
+      });
+    }, 800);
+  }
+  if(window.innerWidth<=700) document.getElementById("fac-side").classList.remove("open");
+}
+
+function showDetail(r){
+  const c=r.color||"#c23b3b";
+  const logo=r.logo_url||"";
+  const k=+r.killed||0,w=+r.wounded||0;
+  const av=logo
+    ?`<img style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid ${c};flex-shrink:0" src="${logo}" onerror="this.style.display='none'">`
+    :`<div style="width:46px;height:46px;border-radius:50%;background:${c}22;border:2px solid ${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;color:${c};font-size:1rem;font-weight:700">${(r.faction_name||"؟").charAt(0)}</div>`;
+  const fields=[["الموقع",r.location],["المحافظة",r.province],["التاريخ",r.date],
+    ["نوع الضربة",r.type],["الواجهة السياسية",r.political_status],["ملاحظات",r.notes]].filter(([,v])=>v);
+  const box=document.createElement("div");
+  box.className="fac-detail";
+  box.id="fac-det";
+  box.style.borderRight=`3px solid ${c}`;
+  box.innerHTML=`
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">${av}
+      <div><div style="font-size:.83rem;font-weight:700;color:var(--tx)">${r.faction_name||"—"}</div>
+      <div style="font-size:.66rem;color:var(--mt)">${r.brigade||""}</div></div>
+    </div>
+    ${fields.map(([l,v])=>`<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:5px;gap:8px">
+      <span style="color:var(--mt);flex-shrink:0">${l}</span>
+      <span style="color:var(--tx2);font-weight:500;text-align:left">${v}</span></div>`).join("")}
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+      ${k>0?`<span class="tag t-ir">${k} قتيل</span>`:""}
+      ${w>0?`<span class="tag t-amb">${w} جريح</span>`:""}
+      ${r.verified?`<span class="tag t-grn">${r.verified}</span>`:""}
+    </div>`;
+  document.getElementById("fac-det")?.remove();
+  document.getElementById("fac-list").insertAdjacentElement("beforebegin",box);
+  document.getElementById("back-btn").style.display="";
+  document.getElementById("fac-title").textContent=r.faction_name||"تفاصيل";
+}
+
+function showAll(){
+  document.getElementById("fac-det")?.remove();
+  document.getElementById("back-btn").style.display="none";
+  document.getElementById("fac-title").textContent="كل الاستهدافات";
+  document.getElementById("q-fac").value="";
+  document.querySelectorAll(".fli").forEach(e=>e.classList.remove("active"));
+  filterFac();
+}
+
+
+function buildFacPopup(r){
+  const c=r.color||"#c23b3b";
+  const logo=r.logo_url||"";
+  const k=+r.killed||0, w=+r.wounded||0;
+  const av=logo
+    ?`<img style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ${c};flex-shrink:0" src="${logo}" onerror="this.style.display='none'">`
+    :`<div style="width:44px;height:44px;border-radius:50%;background:${c}22;border:2px solid ${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;color:${c};font-size:.95rem;font-weight:700">${(r.faction_name||"؟").charAt(0)}</div>`;
+  const fields=[
+    ["الموقع",       r.location],
+    ["المحافظة",    r.province],
+    ["التاريخ",     r.date],
+    ["نوع الضربة",  r.type],
+    ["الواجهة السياسية", r.political_status],
+    ["ملاحظات",     r.notes],
+  ].filter(([,v])=>v);
+  return `<div class="pop">
+    <div class="pop-hd">
+      ${av}
+      <div>
+        <div class="pop-name">${r.faction_name||"—"}</div>
+        <div class="pop-brig">${r.brigade||""}</div>
+      </div>
+    </div>
+    ${fields.map(([l,v])=>`<div class="pop-row">
+      <span class="pop-lbl">${l}</span>
+      <span class="pop-val">${v}</span>
+    </div>`).join("")}
+    <div class="pop-tags" style="margin-top:8px">
+      ${k>0?`<span class="tag t-ir">${k} قتيل</span>`:""}
+      ${w>0?`<span class="tag t-amb">${w} جريح</span>`:""}
+      ${r.verified?`<span class="tag t-grn">${r.verified}</span>`:""}
+    </div>
+  </div>`;
+}
+
+function drawMarkers(rows){
+  MK.forEach(m=>MAP.removeLayer(m));MK=[];
+  const activeSet=new Set(rows.map(r=>(+r.lat||0).toFixed(3)+"_"+(+r.lng||0).toFixed(3)));
+  D.factions.forEach(r=>{
+    const lat=+r.lat||0,lng=+r.lng||0;
+    if(!lat||!lng) return;
+    const key=lat.toFixed(3)+"_"+lng.toFixed(3);
+    const dim=rows.length<D.factions.length&&!activeSet.has(key);
+    const c=r.color||"#c23b3b";
+    const logo=r.logo_url||"";
+    const sz=Math.max(28,Math.min(48,28+(+r.killed||0)*3));
+    const init=(r.faction_name||"؟").charAt(0);
+    const op=dim?"0.2":"1";
+    const bdr=dim?"#2a2a2a":c;
+    const ih=logo
+      ?`<div style="width:${sz}px;height:${sz}px;border-radius:50%;overflow:hidden;border:2.5px solid ${bdr};box-shadow:${dim?"none":"0 0 10px "+c+"55"};opacity:${op};cursor:pointer"><img src="${logo}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div style=&quot;width:${sz}px;height:${sz}px;background:${c}22;display:flex;align-items:center;justify-content:center;color:${c};font-weight:700&quot;>${init}</div>'"></div>`
+      :`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${dim?"#1e1e1e":c+"22"};border:2.5px solid ${bdr};box-shadow:${dim?"none":"0 0 10px "+c+"44"};opacity:${op};cursor:pointer;display:flex;align-items:center;justify-content:center;color:${dim?"#333":c};font-size:${Math.round(sz*.32)}px;font-weight:700;font-family:'IBM Plex Sans Arabic',sans-serif">${init}</div>`;
+    const icon=L.divIcon({html:ih,className:"",iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],popupAnchor:[0,-sz/2-4]});
+    const m=L.marker([lat,lng],{icon}).addTo(MAP);
+    const rr=r;
+    m.bindPopup(buildFacPopup(rr),{maxWidth:300,className:""});
+    m.on("click",()=>{
+      /* highlight in sidebar list */
+      const lid="fl"+lat.toFixed(3).replace(".","")+"_"+lng.toFixed(3).replace(".","");
+      document.querySelectorAll(".fli").forEach(e=>e.classList.remove("active"));
+      document.getElementById(lid)?.classList.add("active");
+      document.getElementById(lid)?.scrollIntoView({block:"nearest",behavior:"smooth"});
+    });
+    MK.push(m);
+  });
+  setTimeout(()=>MAP.invalidateSize(),50);
+}
+
+/* ══════════════════════
+   VIEW S — STRIKES
+══════════════════════ */
+function renderS(){
+  const q=(document.getElementById("q-s").value||"").toLowerCase();
+  const pv=document.getElementById("fp-s").value;
+  const av=document.getElementById("fa-s").value;
+  const rows=D.strikes.filter(r=>
+    (!q||Object.values(r).join(" ").toLowerCase().includes(q))&&
+    (!pv||(r["المحافظة"]||"").includes(pv))&&
+    (!av||(r["الفاعل"]||"").includes(av))
+  ).sort((a,b)=>sortKey(b["التاريخ"],b["الوقت"]||"")-sortKey(a["التاريخ"],a["الوقت"]||""));
+
+  if(!document.getElementById("fp-s").dataset.f){
+    const provs=[...new Set(D.strikes.map(r=>r["المحافظة"]).filter(Boolean))].sort();
+    const acts=[...new Set(D.strikes.map(r=>r["الفاعل"]).filter(Boolean))].sort();
+    document.getElementById("fp-s").innerHTML=`<option value="">كل المحافظات</option>`+provs.map(p=>`<option>${p}</option>`).join("");
+    document.getElementById("fa-s").innerHTML=`<option value="">كل الفاعلين</option>`+acts.map(a=>`<option>${a}</option>`).join("");
+    document.getElementById("fp-s").dataset.f="1";
+  }
+  document.getElementById("cnt-s").textContent=rows.length+" حادثة";
+
+  if(!rows.length){document.getElementById("s-body").innerHTML=`<div class="empty"><div style="font-size:2rem;opacity:.25">🔍</div><div>لا نتائج</div></div>`;return;}
+
+  const groups={};
+  rows.forEach(r=>{const d=r["التاريخ"]||"غير محدد";(groups[d]=groups[d]||[]).push(r);});
+
+  document.getElementById("s-body").innerHTML=`<div class="tl-wrap">`+
+    Object.entries(groups).map(([date,items])=>`
+      <div class="tl-grp">
+        <div class="tl-dt">${date}</div>
+        ${items.map(r=>{
+          const c=aC(r["الفاعل"]);
+          return`<div class="sk" style="--c:${c}">
+            <div class="sk-top"></div>
+            <div class="sk-head">
+              <div class="sk-meta">
+                ${r["الوقت"]?`<span>🕐 ${r["الوقت"]}</span>`:""}
+                ${r["المكان"]?`<span>📍 ${r["المكان"]}</span>`:""}
+                ${r["المحافظة"]?`<span>· ${r["المحافظة"]}</span>`:""}
+                ${r["المستهدف"]?`<span style="color:var(--tx2)">← ${r["المستهدف"]}</span>`:""}
+              </div>
+              <div class="sk-title">${r["الحدث"]||r["الخبر"]||"—"}</div>
+            </div>
+            <div class="sk-foot">
+              <div class="sk-tags">
+                ${r["الفاعل"]?`<span class="tag ${aCls(r["الفاعل"])}">${r["الفاعل"]}</span>`:""}
+                ${r["الحالة"]?`<span class="tag t-grn">${r["الحالة"]}</span>`:""}
+              </div>
+              ${r["المصدر"]?`<a class="src" href="${r["المصدر"]}" target="_blank" rel="noopener">المصدر ↗</a>`:""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`).join("")+`</div>`;
+}
+
+/* ══════════════════════
+   VIEW E — EVENTS
+══════════════════════ */
+function resolveEv(r){
+  const text=r["الخبر"]||"";
+  const name=r["الحدث"]||text.split("\n")[0].substring(0,100)||"—";
+  const date=r["التاريخ"]||"";
+  const time=r["الوقت"]||"";
+  const place=r["المكان"]||"";
+  const prov=r["المحافظة"]||"";
+  let src=r["المصدر"]||"";
+  if(!src) for(const v of Object.values(r)) if(v&&v.startsWith("http")){src=v;break;}
+  return{text,name,date,time,place,prov,src};
+}
+
+function renderE(){
+  const q=(document.getElementById("q-e").value||"").toLowerCase();
+  const pv=document.getElementById("fp-e").value;
+  if(!document.getElementById("fp-e").dataset.f){
+    const provs=[...new Set(D.events.map(r=>r["المحافظة"]).filter(Boolean))].sort();
+    document.getElementById("fp-e").innerHTML=`<option value="">كل المحافظات</option>`+provs.map(p=>`<option>${p}</option>`).join("");
+    document.getElementById("fp-e").dataset.f="1";
+  }
+  const rows=D.events
+    .filter(r=>(!q||Object.values(r).join(" ").toLowerCase().includes(q))&&(!pv||(r["المحافظة"]||"").includes(pv)))
+    .sort((a,b)=>sortKey(b["التاريخ"],b["الوقت"]||"")-sortKey(a["التاريخ"],a["الوقت"]||""));
+  document.getElementById("cnt-e").textContent=rows.length+" حدث";
+
+  if(!rows.length){document.getElementById("e-body").innerHTML=`<div class="empty"><div style="font-size:2rem;opacity:.25">📭</div><div>لا توجد أحداث</div></div>`;return;}
+
+  const groups={};
+  rows.forEach(r=>{const e=resolveEv(r);const d=e.date||"غير محدد";(groups[d]=groups[d]||[]).push({r,e});});
+
+  document.getElementById("e-body").innerHTML=`<div class="tl-wrap">`+
+    Object.entries(groups).map(([date,items])=>`
+      <div class="tl-grp">
+        <div class="tl-dt">${date}</div>
+        ${items.map(({r,e})=>{
+          const body=e.text&&e.text!==e.name?e.text:"";
+          return`<div class="ev">
+            <div class="ev-top"></div>
+            <div class="ev-head">
+              <div class="ev-meta">
+                ${e.time?`<span>🕐 ${e.time}</span>`:""}
+                ${e.place?`<span>📍 ${e.place}</span>`:""}
+                ${e.prov?`<span>· ${e.prov}</span>`:""}
+              </div>
+              <div class="ev-name">${e.name||"—"}</div>
+            </div>
+            ${body?`<div class="ev-body">${body}</div>`:""}
+            <div class="ev-foot">
+              <span class="ev-prov">${e.prov||""}</span>
+              ${e.src?`<a class="src" href="${e.src}" target="_blank" rel="noopener">المصدر ↗</a>`:""}
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`).join("")+`</div>`;
+}
+
+/* ══════════════════════
+   VIEW Sec — SECURITY
+══════════════════════ */
+function resolveSec(r){
+  const raw=Object.values(r).join(" ").trim();
+  let src=r["المصدر"]||"";
+  if(!src){const m=raw.match(/_+(https?:\/\/[^\s_]+)_+/);if(m)src=m[1];else{const m2=raw.match(/(https?:\/\/[^\s,]+)/);if(m2)src=m2[1];}}
+  let date=r["التاريخ"]||"";
+  if(!date){const m=raw.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*\d{4}/i);if(m)date=m[0];}
+  let text=r["البيان"]||r["الخبر"]||r[Object.keys(r)[0]]||raw;
+  text=text.replace(/_*(https?:\/\/[^\s_]+)_*/g,"")
+    .replace(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s*\d{4}/gi,"")
+    .replace(/={3,}/g,"").replace(/_{3,}/g,"").replace(/\n{3,}/g,"\n\n").trim();
+  return{text,date,src};
+}
+
+function renderSec(){
+  const q=(document.getElementById("q-sec").value||"").toLowerCase();
+  const all=D.security.map(r=>({...resolveSec(r),_r:r}))
+    .filter(o=>o.text)
+    .filter(o=>!q||o.text.toLowerCase().includes(q))
+    .sort((a,b)=>sortKey(b.date,"")-sortKey(a.date,"")); // newest first
+
+  document.getElementById("cnt-sec-n").textContent=all.length+" بيان";
+
+  if(!all.length){document.getElementById("sec-body").innerHTML=`<div class="empty"><div style="font-size:2rem;opacity:.25">📋</div><div>لا توجد بيانات</div></div>`;return;}
+
+  const newest=all[0];
+  const older=all.slice(1);
+
+  let html=`<div class="sec-feat">
+    <div class="sec-feat-bar">
+      <span class="sec-feat-lbl">خلية الإعلام الأمني</span>
+      <span class="sec-new">الأحدث</span>
+      ${newest.date?`<span class="sec-feat-date">${newest.date}</span>`:""}
+    </div>
+    <div class="sec-feat-body">${newest.text}</div>
+    <div class="sec-feat-foot">
+      ${newest.src?`<a class="src" href="${newest.src}" target="_blank" rel="noopener">المصدر ↗</a>`:""}
+    </div>
+  </div>`;
+
+  html+=older.map((o,i)=>{
+    const prev=o.text.replace(/\n/g," ").substring(0,100)+(o.text.length>100?"…":"");
+    return`<div class="sec-card">
+      <div class="sec-hd" onclick="togSec(${i})">
+        <span class="sec-date">${o.date||"—"}</span>
+        <span class="sec-prev">${prev}</span>
+        <span class="sec-arr" id="sa${i}">▾</span>
+      </div>
+      <div class="sec-full" id="sf${i}">${o.text}</div>
+      ${o.src?`<div class="sec-foot"><a class="src" href="${o.src}" target="_blank" rel="noopener">المصدر ↗</a></div>`:""}
+    </div>`;
+  }).join("");
+
+  document.getElementById("sec-body").innerHTML=html;
+}
+function togSec(i){
+  document.getElementById("sf"+i).classList.toggle("on");
+  document.getElementById("sa"+i).classList.toggle("open");
+}
+
+
+/* Parse date+time into sortable value (newest first) */
+function sortKey(dateStr, timeStr){
+  const d = new Date(dateStr||0);
+  if(!timeStr) return d.getTime();
+  /* parse time like "10:38" or "6:49 PM" or "12:24:00 PM" */
+  const t = timeStr.trim();
+  const pm = /pm/i.test(t);
+  const parts = t.replace(/[apm]/gi,"").trim().split(":");
+  let h2 = parseInt(parts[0])||0;
+  const m2 = parseInt(parts[1])||0;
+  const s2 = parseInt(parts[2])||0;
+  if(pm && h2<12) h2+=12;
+  if(!pm && h2===12) h2=0;
+  d.setHours(h2,m2,s2);
+  return d.getTime();
+}
+
+/* ══ HELPERS ══ */
+function aC(a){
+  const n=(a||"").replace(/[أإا]/g,"ا");
+  if(n.includes("امريكي")&&n.includes("اسرائيلي")) return "#7a4db0";
+  if(n.includes("امريكي")) return "#3a7bd5";
+  if(n.includes("اسرائيلي")) return "#c4922a";
+  return "#6674a0";
+}
+function aCls(a){
+  const n=(a||"").replace(/[أإا]/g,"ا");
+  if(n.includes("امريكي")&&n.includes("اسرائيلي")) return "t-ir";
+  if(n.includes("امريكي")) return "t-us";
+  if(n.includes("اسرائيلي")) return "t-il";
+  return "t-neu";
+}
+function setSt(s,m){
+  const d=document.getElementById("sd");
+  d.className="sd"+(s==="L"?" L":s==="E"?" E":"");
+  document.getElementById("st").textContent=m;
+}
+
+/* ══ INIT ══ */
+// Init factions map immediately since it's the default view
+document.addEventListener("DOMContentLoaded",()=>{
+  initMap();
+  loadAll();
+  setInterval(loadAll,90000);
+});
+</script>
+</body>
+</html>
