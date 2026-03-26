@@ -47,7 +47,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);display:flex;f
   transition:.15s;white-space:nowrap}
 .ntab:hover{color:var(--tx)}
 .ntab.on{color:var(--tx);border-bottom-color:var(--c,var(--grn))}
-.ndot{width:7px;height:7px;border-radius:50%;background:var(--c,#888);flex-shrink:0}
+.ndot{width:7px;height:7px;border-radius:50%;background:var(--c,#888);
+  flex-shrink:0;animation:pulse-dot 1.8s ease-in-out infinite;box-shadow:0 0 0 0 var(--c,#888)}
+@keyframes pulse-dot{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c,#888) 70%,transparent);opacity:1}
+  60%{box-shadow:0 0 0 5px color-mix(in srgb,var(--c,#888) 0%,transparent);opacity:.8}
+  100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--c,#888) 0%,transparent);opacity:1}
+}
+.ntab.on .ndot{animation:none;box-shadow:none}
 .nbadge{background:var(--bdr);border-radius:10px;padding:1px 7px;font-size:.61rem;color:var(--tx2);font-weight:600}
 
 /* VIEWS */
@@ -267,23 +274,23 @@ select.fi option{background:var(--card)}
 <!-- NAV -->
 <nav id="nav">
   <button class="ntab on" data-v="F" style="--c:#c23b3b" onclick="goto('F',this)">
-    <div class="ndot"></div> استهدافات الفصائل <span class="nbadge" id="c-f">—</span>
+    <div class="ndot"></div> الفصائل المستهدفة <span class="nbadge" id="c-f">—</span>
   </button>
   <button class="ntab" data-v="S" style="--c:#3a7bd5" onclick="goto('S',this)">
-    <div class="ndot"></div> ضربات داخل العراق <span class="nbadge" id="c-s">—</span>
+    <div class="ndot"></div> الضربات والهجمات <span class="nbadge" id="c-s">—</span>
   </button>
   <button class="ntab" data-v="E" style="--c:#2dbc78" onclick="goto('E',this)">
-    <div class="ndot"></div> أبرز الأحداث <span class="nbadge" id="c-e">—</span>
+    <div class="ndot"></div> الأحداث <span class="nbadge" id="c-e">—</span>
   </button>
   <button class="ntab" data-v="Sec" style="--c:#df8f2e" onclick="goto('Sec',this)">
-    <div class="ndot"></div> خلية الإعلام الأمني <span class="nbadge" id="c-sec">—</span>
+    <div class="ndot"></div> الإعلام الأمني <span class="nbadge" id="c-sec">—</span>
   </button>
 </nav>
 
 <!-- VIEWS -->
 <div id="views">
 
-<!-- VIEW F: استهدافات الفصائل -->
+<!-- VIEW F: الفصائل المستهدفة -->
 <div class="view on" id="vF">
   <div id="fac-map-wrap">
     <div id="fac-map"></div>
@@ -306,18 +313,18 @@ select.fi option{background:var(--card)}
   </div>
 </div>
 
-<!-- VIEW S: ضربات داخل العراق -->
+<!-- VIEW S: الضربات والهجمات -->
 <div class="view" id="vS">
   <div class="vtb">
     <input class="fi-sm" style="width:180px" type="text" id="q-s" placeholder="بحث..." oninput="renderS()">
-    <select class="fi-sm" style="width:140px" id="fp-s" onchange="renderS()"><option value="">كل المحافظات</option></select>
+    <select class="fi-sm" style="width:140px" id="fp-s" onchange="renderS()"><option value="">أماكن الاستهداف</option></select>
     <select class="fi-sm" style="width:145px" id="fa-s" onchange="renderS()"><option value="">كل الفاعلين</option></select>
     <span class="vcnt" id="cnt-s"></span>
   </div>
   <div class="vbody"><div class="vcenter"><div id="s-body"><div class="empty"><div class="loader"></div></div></div></div></div>
 </div>
 
-<!-- VIEW E: أبرز الأحداث -->
+<!-- VIEW E: الأحداث -->
 <div class="view" id="vE">
   <div class="vtb">
     <input class="fi-sm" style="width:180px" type="text" id="q-e" placeholder="بحث في الأحداث..." oninput="renderE()">
@@ -327,7 +334,7 @@ select.fi option{background:var(--card)}
   <div class="vbody"><div class="vcenter"><div id="e-body"><div class="empty"><div class="loader"></div></div></div></div></div>
 </div>
 
-<!-- VIEW Sec: خلية الإعلام الأمني -->
+<!-- VIEW Sec: الإعلام الأمني -->
 <div class="view" id="vSec">
   <div class="vtb">
     <input class="fi-sm" style="width:200px" type="text" id="q-sec" placeholder="بحث في البيانات..." oninput="renderSec()">
@@ -631,7 +638,7 @@ function renderS(){
   if(!document.getElementById("fp-s").dataset.f){
     const provs=[...new Set(D.strikes.map(r=>r["المحافظة"]).filter(Boolean))].sort();
     const acts=[...new Set(D.strikes.map(r=>r["الفاعل"]).filter(Boolean))].sort();
-    document.getElementById("fp-s").innerHTML=`<option value="">كل المحافظات</option>`+provs.map(p=>`<option>${p}</option>`).join("");
+    document.getElementById("fp-s").innerHTML=`<option value="">أماكن الاستهداف</option>`+provs.map(p=>`<option>${p}</option>`).join("");
     document.getElementById("fa-s").innerHTML=`<option value="">كل الفاعلين</option>`+acts.map(a=>`<option>${a}</option>`).join("");
     document.getElementById("fp-s").dataset.f="1";
   }
@@ -762,7 +769,7 @@ function renderSec(){
 
   let html=`<div class="sec-feat">
     <div class="sec-feat-bar">
-      <span class="sec-feat-lbl">خلية الإعلام الأمني</span>
+      <span class="sec-feat-lbl">الإعلام الأمني</span>
       <span class="sec-new">الأحدث</span>
       ${newest.date?`<span class="sec-feat-date">${newest.date}</span>`:""}
     </div>
